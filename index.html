@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Слежение — Найди жирафа</title>
+
+<style>
+body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:url('https://www.shutterstock.com/image-photo/umbrella-tree-serengeti-national-park-600nw-2472924997.jpg') center/cover;
+    font-family:Arial;
+}
+
+h1,.info,.tries{
+    color:white;
+    text-shadow:2px 2px 4px black;
+}
+
+.grid{
+    position:relative;
+    width:390px;
+    height:390px;
+    margin-top:10px;
+}
+
+.cell{
+    position:absolute;
+    width:120px;
+    height:120px;
+    transition:transform 0.7s;
+    cursor:pointer;
+}
+
+.card{
+    width:100%;
+    height:100%;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform 0.5s;
+}
+
+.card.flipped{
+    transform:rotateY(180deg);
+}
+
+.side{
+    position:absolute;
+    width:100%;
+    height:100%;
+    border-radius:12px;
+    backface-visibility:hidden;
+}
+
+.front{
+    background:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform:rotateY(180deg);
+}
+
+.front img{
+    width:80%;
+}
+
+.back{
+    background:black;
+}
+
+button{
+    margin-top:15px;
+    padding:10px 20px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Тренировка внимания</h1>
+<div class="info">Следи за жирафом</div>
+<div class="tries" id="tries">Попытки: 3</div>
+
+<div class="grid" id="grid"></div>
+<button id="restart">Начать заново</button>
+
+<script>
+const animals = [
+ {name:'giraffe',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Giraffe_standing.jpg/960px-Giraffe_standing.jpg'},
+ {name:'lion',img:'https://www.krugerpark.co.za/images/black-maned-lion-shem-compion-786x500.jpg'},
+ {name:'zebra',img:'https://nationaltoday.com/wp-content/uploads/2022/02/International-Zebra-Day-1200x834.jpg'},
+ {name:'elephant',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Elephant_near_ndutu.jpg/500px-Elephant_near_ndutu.jpg'},
+ {name:'hippo',img:'https://www.fotoaparat.cz/storage/pm/09/12/16/682774_4e998.jpg'},
+ {name:'rhino',img:'https://cdn.britannica.com/89/162189-050-9CFBC925.jpg'},
+ {name:'buffalo',img:'https://bueffelbill.ch/cdn/shop/articles/Design_ohne_Titel_36.png'},
+ {name:'gazelle',img:'https://lifecatalog.ru/images/g/gaz/Gazella-arabica.png'},
+ {name:'hyena',img:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQBhaDkV7LjK573xkriFqs5l8DIda_GK2o5Q'}
+];
+
+const slots = [
+ {x:0,y:0},{x:135,y:0},{x:270,y:0},
+ {x:0,y:135},{x:135,y:135},{x:270,y:135},
+ {x:0,y:270},{x:135,y:270},{x:270,y:270}
+];
+
+const grid = document.getElementById('grid');
+const triesText = document.getElementById('tries');
+let cards=[], tries=3, canClick=false;
+
+function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
+
+function start(){
+    grid.innerHTML='';
+    cards=[];
+    tries=3;
+    triesText.textContent='Попытки: 3';
+    canClick=false;
+
+    shuffle([...animals]).forEach((a,i)=>{
+        const cell=document.createElement('div');
+        cell.className='cell';
+        cell.dataset.slot=i;
+        cell.style.transform=`translate(${slots[i].x}px,${slots[i].y}px)`;
+
+        const card=document.createElement('div');
+        card.className='card flipped';
+        card.dataset.name=a.name;
+        card.innerHTML=`
+            <div class="side back"></div>
+            <div class="side front"><img src="${a.img}"></div>
+        `;
+
+        cell.appendChild(card);
+        grid.appendChild(cell);
+        cards.push(cell);
+    });
+
+    setTimeout(()=>{
+        document.querySelectorAll('.card').forEach(c=>c.classList.remove('flipped'));
+        mix(6);
+    },2000);
+}
+
+function mix(times){
+    let c=0;
+    function step(){
+        const a=Math.floor(Math.random()*cards.length);
+        let b=Math.floor(Math.random()*cards.length);
+        while(a===b) b=Math.floor(Math.random()*cards.length);
+
+        const sa=cards[a].dataset.slot;
+        const sb=cards[b].dataset.slot;
+
+        cards[a].dataset.slot=sb;
+        cards[b].dataset.slot=sa;
+
+        cards[a].style.transform=`translate(${slots[sb].x}px,${slots[sb].y}px)`;
+        cards[b].style.transform=`translate(${slots[sa].x}px,${slots[sa].y}px)`;
+
+        c++;
+        if(c<times) setTimeout(step,800);
+        else canClick=true;
+    }
+    step();
+}
+
+grid.onclick=e=>{
+    if(!canClick) return;
+    const cell=e.target.closest('.cell');
+    if(!cell) return;
+
+    const card=cell.querySelector('.card');
+    card.classList.add('flipped');
+
+    if(card.dataset.name==='giraffe'){
+        alert('Верно! 🦒');
+        canClick=false;
+    }else{
+        tries--;
+        triesText.textContent='Попытки: '+tries;
+        if(tries===0){
+            alert('Попытки закончились');
+            canClick=false;
+        }
+    }
+};
+
+document.getElementById('restart').onclick=start;
+start();
+</script>
+
+</body>
+</html>
